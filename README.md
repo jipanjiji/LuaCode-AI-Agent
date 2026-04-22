@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version">
-  <img src="https://img.shields.io/badge/Powered%20By-Groq-green?style=for-the-badge" alt="Powered By Groq">
+  <img src="https://img.shields.io/badge/Powered%20By-Gemini%20and%20Groq-green?style=for-the-badge" alt="Powered By Gemini and Groq">
   <img src="https://img.shields.io/badge/Made%20With-Nuxt%203-00DC82?style=for-the-badge&logo=nuxt.js&logoColor=white" alt="Nuxt 3">
 </div>
 
@@ -13,7 +13,7 @@ A premium, high-performance AI assistant specialized in **Roblox Scripting** and
 ## ✨ Key Features
 
 - **🧠 specialized Intelligence**: Specifically tuned for Nuxt 3 development and Roblox Luau scripting with a Senior Consultant persona.
-- **🚀 Ultra-Fast Responses**: Leverages Groq's high-speed LPU inference for near-instant message streaming.
+- **🚀 Ultra-Fast Responses**: Leverages high-speed LPU inference for near-instant message streaming.
 - **📁 Advanced Session Management**:
   - Multi-session chat history.
   - Custom modals for renaming and settings (no native browser prompts).
@@ -29,7 +29,7 @@ A premium, high-performance AI assistant specialized in **Roblox Scripting** and
 - **Framework**: [Nuxt 3](https://nuxt.com/)
 - **State Management**: [Pinia](https://pinia.vuejs.org/)
 - **Styling**: Tailwind CSS & Premium Vanilla CSS
-- **AI Engine**: [Groq API](https://groq.com/)
+- **AI Engine**: [Groq](https://groq.com/) [Gemini](https://gemini.google.com/app)
 - **Icons**: Custom SVG Architecture
 - **Markdown**: `markdown-it` with `highlight.js` integration
 
@@ -39,7 +39,8 @@ A premium, high-performance AI assistant specialized in **Roblox Scripting** and
 
 - Node.js (v18.x or later)
 - npm, yarn, or pnpm
-- A **Groq API Key** (Get it at [Groq Console](https://console.groq.com/))
+- A **Groq API Key** (Get it at [Groq Console](https://console.groq.com/keys))
+- A **Gemini API Key** (Get it at [Gemini API](https://aistudio.google.com/app/api-keys))
 
 ### Installation & Setup
 
@@ -62,7 +63,7 @@ A premium, high-performance AI assistant specialized in **Roblox Scripting** and
 4. **Configuration**:
    - Navigate to `http://localhost:3000`.
    - Click the **Settings** icon in the sidebar.
-   - Enter your **Groq API Key** and choose your model (e.g., Llama-3.1-70b-versatile).
+   - Enter your **Groq / Gemini API Key** and choose your model (e.g., Llama-3.1-70b / Gemini 3 Pro).
 
 ---
 
@@ -72,4 +73,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**Developed with ❤️ by [Alvin]**
+**Developed with ❤️ by [Someone]**

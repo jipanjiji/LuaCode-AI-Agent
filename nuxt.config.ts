@@ -31,6 +31,7 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#0f1117' }
       ],
       link: [
+        { rel: 'icon', type: 'image/png', href: '/logo.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
