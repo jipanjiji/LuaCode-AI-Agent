@@ -1,4 +1,4 @@
-# 🛸 LuaCode AI Agent
+#  LuaCode AI Agent
 
 <div align="center">
   <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version">
