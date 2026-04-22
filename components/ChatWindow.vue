@@ -3,8 +3,10 @@
     <!-- Empty state -->
     <Transition name="empty-fade">
       <div v-if="!chat.hasMessages" class="empty-state">
-        <div class="empty-icon shadow-lg">
-          <img src="/logo.png" alt="Logo" class="full-logo" />
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
         </div>
         <h1 class="empty-title">LuaScript AI Agent</h1>
         <p class="empty-subtitle">Your expert AI for Lua & Luau scripting</p>
@@ -151,27 +153,23 @@ onUnmounted(() => {
 }
 
 .empty-icon {
-  width: 96px;
-  height: 96px;
+  width: 84px;
+  height: 84px;
   border-radius: 24px;
+  background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.05));
+  border: 1px solid rgba(251,191,36,0.2);
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #fbbf24;
   margin-bottom: 24px;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  animation: float 6s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(251,191,36,0.1);
+  animation: glow 2s ease-in-out infinite alternate;
 }
 
-.full-logo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+@keyframes glow {
+  from { box-shadow: 0 0 10px rgba(251,191,36,0.1); }
+  to { box-shadow: 0 0 30px rgba(251,191,36,0.25), 0 0 60px rgba(251,191,36,0.1); }
 }
 
 .empty-title {

@@ -3,7 +3,9 @@
     <!-- Brand -->
     <div class="sidebar-brand" :class="{ 'clickable': isCollapsed }" @click="isCollapsed ? isCollapsed = false : null">
       <div class="brand-icon">
-        <img src="/logo.png" alt="Logo" class="logo-img" />
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
       <Transition name="fade-text">
         <div v-if="!isCollapsed" class="brand-text">
@@ -246,14 +248,10 @@ function handleCollapse() {
   width: 36px;
   height: 36px;
   border-radius: 10px;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  color: #0d1117;
   flex-shrink: 0;
-  overflow: hidden;
-}
-
-.logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  box-shadow: 0 0 12px rgba(251,191,36,0.3);
 }
 
 .brand-text {

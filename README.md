@@ -29,7 +29,7 @@ A premium, high-performance AI assistant specialized in **Roblox Scripting** and
 - **Framework**: [Nuxt 3](https://nuxt.com/)
 - **State Management**: [Pinia](https://pinia.vuejs.org/)
 - **Styling**: Tailwind CSS & Premium Vanilla CSS
-- **AI Engine**: [Groq](https://groq.com/) [Gemini](https://gemini.google.com/app)
+- **AI Engine**: [Groq](https://groq.com/), [Gemini](https://gemini.google.com/app)
 - **Icons**: Custom SVG Architecture
 - **Markdown**: `markdown-it` with `highlight.js` integration
 
