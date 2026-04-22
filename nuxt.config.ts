@@ -48,7 +48,5 @@ export default defineNuxtConfig({
     exposeConfig: false,
   },
 
-  nitro: {
-    preset: 'node-server'
-  }
-})
+
+});
