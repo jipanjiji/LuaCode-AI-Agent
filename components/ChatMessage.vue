@@ -18,7 +18,7 @@
     <div class="message-bubble" :class="[ message.role, { error: message.isError } ]">
       <!-- Role label -->
       <div class="message-header">
-        <span class="role-label">{{ message.role === 'user' ? 'You' : 'LuaScript AI' }}</span>
+        <span class="role-label">{{ message.role === 'user' ? 'You' : 'LuaCode AI' }}</span>
         <span class="timestamp">{{ formatTime(message.timestamp) }}</span>
       </div>
 

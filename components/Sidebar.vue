@@ -9,7 +9,7 @@
       </div>
       <Transition name="fade-text">
         <div v-if="!isCollapsed" class="brand-text">
-          <span class="brand-name gradient-text">LuaScript</span>
+          <span class="brand-name gradient-text">LuaCode</span>
           <span class="brand-sub">AI Agent</span>
         </div>
       </Transition>

@@ -1,4 +1,4 @@
-# 🛸 LuaScript AI Agent
+# 🛸 LuaCode AI Agent
 
 <div align="center">
   <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version">
@@ -46,8 +46,8 @@ A premium, high-performance AI assistant specialized in **Roblox Scripting** and
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/jipanjiji/LuaScript-AI-Agent.git
-   cd LuaScript-AI-Agent
+   git clone https://github.com/jipanjiji/LuaCode-AI-Agent.git
+   cd LuaCode-AI-Agent
    ```
 
 2. **Install dependencies**:
