@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #252f45; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #344060; }
+
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: #0d1117;
+  color: #e2e8f0;
+  height: 100%;
+}
+
+body { height: 100%; margin: 0; overflow: hidden; }
+
+#__nuxt { height: 100%; display: flex; }
+
+/* ─── Markdown prose resets ─────────────────────────────────────────────────── */
+.prose { color: #cbd5e1; line-height: 1.75; }
+.prose h1,.prose h2,.prose h3,.prose h4 {
+  color: #f1f5f9;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+.prose p { margin: 0.6em 0; }
+.prose ul, .prose ol { padding-left: 1.5em; }
+.prose li { margin: 0.25em 0; }
+.prose strong { color: #fbbf24; }
+.prose em { color: #94a3b8; }
+.prose a { color: #fbbf24; text-decoration: underline; }
+.prose a:hover { color: #fcd34d; }
+.prose blockquote {
+  border-left: 3px solid #fbbf24;
+  padding-left: 1em;
+  color: #94a3b8;
+  margin: 1em 0;
+  background: rgba(251,191,36,0.05);
+  border-radius: 0 6px 6px 0;
+}
+.prose hr { border-color: #252f45; margin: 1.5em 0; }
+
+/* ─── Code blocks ───────────────────────────────────────────────────────────── */
+.prose code:not(.hljs) {
+  background: #1e2940;
+  color: #fbbf24;
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  border: 1px solid #252f45;
+}
+
+.prose pre {
+  background: #0d1117 !important;
+  border: 1px solid #252f45;
+  border-radius: 10px;
+  padding: 0 !important;
+  overflow: hidden;
+  margin: 0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.prose pre code {
+  display: block;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.825rem;
+  line-height: 1.65;
+  background: transparent !important;
+  border: none !important;
+  color: #e2e8f0;
+}
+
+/* ─── HLjs Syntax Colors (One Dark inspired) ───────────────────────────────── */
+.hljs-comment, .hljs-quote { color: #5c6370; font-style: italic; }
+.hljs-doctag, .hljs-keyword, .hljs-formula { color: #c678dd; } /* purple */
+.hljs-section, .hljs-name, .hljs-selector-tag, .hljs-deletion, .hljs-subst { color: #e06c75; } /* red */
+.hljs-literal { color: #56b6c2; } /* cyan */
+.hljs-string, .hljs-regexp, .hljs-addition, .hljs-attribute, .hljs-meta-string { color: #98c379; } /* green */
+.hljs-built_in, .hljs-class .hljs-title { color: #e6c07b; } /* yellow/gold */
+.hljs-attr, .hljs-variable, .hljs-template-variable, .hljs-type, .hljs-selector-class, .hljs-selector-attr, .hljs-selector-pseudo, .hljs-number { color: #d19a66; } /* orange/gold-ish */
+.hljs-symbol, .hljs-bullet, .hljs-link, .hljs-meta, .hljs-selector-id, .hljs-title { color: #61afef; } /* blue */
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: bold; }
+.hljs-link { text-decoration: underline; }
+
+/* ─── HLjs override ─────────────────────────────────────────────────────────── */
+.hljs { background: transparent !important; }
+
+/* ─── Code block wrapper ────────────────────────────────────────────────────── */
+.code-block-wrapper {
+  position: relative;
+  margin: 0.5rem 0 1.25rem 0;
+  border: 1px solid #2d3f6c;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.3s ease;
+}
+
+.code-block-wrapper:hover {
+  border-color: #3b82f6;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #111827;
+  border-bottom: 1px solid #2d3f6c;
+  padding: 0.25rem 1rem;
+  min-height: 38px;
+  transition: background 0.3s ease;
+}
+
+.code-block-lang {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: #fbbf24;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.code-block-wrapper pre {
+  border-radius: 0 !important;
+  border: none !important;
+  margin: 0 !important;
+}
+
+/* ─── Copy button ───────────────────────────────────────────────────────────── */
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 5px;
+  border: 1px solid #2d3f6c;
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 88px;
+  height: 28px;
+  flex-shrink: 0;
+  justify-content: center;
+  padding: 0; /* Clear padding for absolute centering */
+}
+
+.copy-btn:hover {
+  background: #1e2940;
+  color: #e2e8f0;
+  border-color: #344060;
+}
+
+.copy-btn.copied {
+  color: #34d399;
+  border-color: #059669;
+  background: rgba(16,185,129,0.08);
+}
+
+/* ─── Typing animation ──────────────────────────────────────────────────────── */
+.typing-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fbbf24;
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.16s; }
+.typing-dot:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes pulseDot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* ─── Glassmorphism surfaces ────────────────────────────────────────────────── */
+.glass {
+  background: rgba(20, 25, 34, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(37, 47, 69, 0.8);
+}
+
+/* ─── Gradient text ─────────────────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #fcd34d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Input focus ring ──────────────────────────────────────────────────────── */
+.input-glow:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(245,158,11,0.3), 0 0 20px rgba(245,158,11,0.1);
+  border-color: rgba(245,158,11,0.5) !important;
+}
+
+/* ─── Transitions ───────────────────────────────────────────────────────────── */
+.message-enter-active { transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.message-enter-from { opacity: 0; transform: translateY(16px); }
