@@ -47,6 +47,4 @@ export default defineNuxtConfig({
     configPath: '~/tailwind.config.ts',
     exposeConfig: false,
   },
-
-
 });
