@@ -51,6 +51,13 @@
                 >
                   Groq
                 </button>
+                <button
+                  class="provider-btn"
+                  :class="{ active: localProvider === 'ollama' }"
+                  @click="localProvider = 'ollama'"
+                >
+                  Ollama (Host)
+                </button>
               </div>
             </div>
 
@@ -60,9 +67,9 @@
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
                 </svg>
-                {{ localProvider === 'google' ? 'Gemini' : 'Groq' }} API Key
+                {{ localProvider === 'google' ? 'Gemini' : (localProvider === 'groq' ? 'Groq' : 'Ollama') }} {{ localProvider === 'ollama' ? 'Configuration' : 'API Key' }}
                 <button 
-                  v-if="localProvider === 'google' ? localGeminiKey : localGroqKey" 
+                  v-if="localProvider !== 'ollama' && (localProvider === 'google' ? localGeminiKey : localGroqKey)" 
                   class="disconnect-link" 
                   @click="localProvider === 'google' ? (localGeminiKey = '') : (localGroqKey = '')"
                 >
@@ -103,7 +110,7 @@
                 </div>
               </div>
 
-              <div v-else class="input-group">
+              <div v-else-if="localProvider === 'groq'" class="input-group">
                 <input
                   v-model="localGroqKey"
                   :type="showApiKey ? 'text' : 'password'"
@@ -136,12 +143,36 @@
                 </div>
               </div>
 
+              <div v-else class="ollama-config">
+                <div class="ollama-field">
+                  <label class="ollama-label">Server URL (Cloudflare/Ngrok)</label>
+                  <input
+                    v-model="localOllamaBaseUrl"
+                    type="text"
+                    class="form-input input-glow"
+                    placeholder="https://your-tunnel.trycloudflare.com"
+                  />
+                </div>
+                <div class="ollama-field">
+                  <label class="ollama-label">Model Name</label>
+                  <input
+                    v-model="localOllamaModel"
+                    type="text"
+                    class="form-input input-glow"
+                    placeholder="qwen2.5-coder:14b"
+                  />
+                </div>
+              </div>
+
               <p class="field-hint">
                 <template v-if="localProvider === 'google'">
                   Get key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link">Google Studio ↗</a>
                 </template>
-                <template v-else>
+                <template v-else-if="localProvider === 'groq'">
                   Get key from <a href="https://console.groq.com/keys" target="_blank" class="link">Groq Console ↗</a>
+                </template>
+                <template v-else>
+                  Use your laptop as server via <a href="https://ollama.com" target="_blank" class="link">Ollama ↗</a>
                 </template>
               </p>
 
@@ -319,9 +350,11 @@ const emit = defineEmits<{ close: [] }>()
 
 const settings = useSettingsStore()
 
-const localProvider = ref<'google' | 'groq'>('google')
+const localProvider = ref<'google' | 'groq' | 'ollama'>('google')
 const localGeminiKey = ref('')
 const localGroqKey = ref('')
+const localOllamaBaseUrl = ref('')
+const localOllamaModel = ref('')
 const localSystemPrompt = ref('')
 const localModel = ref('')
 const showApiKey = ref(false)
@@ -333,6 +366,7 @@ let validationTimeout: any = null
 const showModelDropdown = ref(false)
 
 const selectedModelLabel = computed(() => {
+  if (localProvider.value === 'ollama') return localOllamaModel.value || 'Not set'
   const models = localProvider.value === 'google' 
     ? settings.availableModels 
     : settings.groqAvailableModels
@@ -422,13 +456,17 @@ watch(
       localProvider.value = settings.provider
       localGeminiKey.value = settings.geminiApiKey
       localGroqKey.value = settings.groqApiKey
+      localOllamaBaseUrl.value = settings.ollamaBaseUrl
+      localOllamaModel.value = settings.ollamaModel
       localSystemPrompt.value = settings.systemPrompt
       localModel.value = settings.model
       saveStatus.value = 'idle'
       showApiKey.value = false
       
       // Discovery & Polling
-      settings.discoverModels()
+      if (localProvider.value !== 'ollama') {
+        settings.discoverModels()
+      }
       startHealthPolling()
 
       // Initial validation if keys exist
@@ -464,8 +502,10 @@ watch(localProvider, (newProvider, oldProvider) => {
   
   if (newProvider === 'google') {
     localModel.value = 'gemini-2.5-flash'
-  } else {
+  } else if (newProvider === 'groq') {
     localModel.value = 'llama-3.3-70b-versatile'
+  } else {
+    localModel.value = localOllamaModel.value || 'qwen2.5-coder:14b'
   }
 })
 
@@ -476,8 +516,10 @@ function handleSave() {
     provider: localProvider.value,
     geminiApiKey: localGeminiKey.value,
     groqApiKey: localGroqKey.value,
+    ollamaBaseUrl: localOllamaBaseUrl.value,
+    ollamaModel: localOllamaModel.value,
     systemPrompt: localSystemPrompt.value,
-    model: localModel.value,
+    model: localProvider.value === 'ollama' ? localOllamaModel.value : localModel.value,
   })
   saveStatus.value = 'saved'
   setTimeout(() => {
@@ -1054,4 +1096,28 @@ function resetSystemPrompt() {
 .modal-leave-active { transition: all 0.2s ease; }
 .modal-enter-from { opacity: 0; transform: scale(0.94) translateY(16px); }
 .modal-leave-to { opacity: 0; transform: scale(0.97) translateY(8px); }
+.ollama-config {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid #252f45;
+  border-radius: 10px;
+}
+
+.ollama-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ollama-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6b7fa3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 </style>

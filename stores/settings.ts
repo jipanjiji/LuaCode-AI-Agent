@@ -25,9 +25,11 @@ const DEFAULT_SYSTEM_PROMPT = `You are **LuaScript AI Agent**, an elite Senior R
 const STORAGE_KEY = 'luascript-settings'
 
 export interface SettingsState {
-  provider: 'google' | 'groq'
+  provider: 'google' | 'groq' | 'ollama'
   geminiApiKey: string
   groqApiKey: string
+  ollamaBaseUrl: string
+  ollamaModel: string
   systemPrompt: string
   model: string
   availableModels: ModelInfo[]
@@ -64,6 +66,8 @@ function saveToStorage(state: SettingsState) {
       provider: state.provider,
       geminiApiKey: state.geminiApiKey,
       groqApiKey: state.groqApiKey,
+      ollamaBaseUrl: state.ollamaBaseUrl,
+      ollamaModel: state.ollamaModel,
       systemPrompt: state.systemPrompt,
       model: state.model
     }))
@@ -78,11 +82,13 @@ export const useSettingsStore = defineStore('settings', {
     const provider = saved.provider || 'google'
     
     return {
-      provider: provider as 'google' | 'groq',
+      provider: provider as 'google' | 'groq' | 'ollama',
       geminiApiKey: saved.geminiApiKey || '',
       groqApiKey: saved.groqApiKey || '',
+      ollamaBaseUrl: saved.ollamaBaseUrl || 'http://localhost:11434',
+      ollamaModel: saved.ollamaModel || 'qwen2.5-coder:14b',
       systemPrompt: saved.systemPrompt || DEFAULT_SYSTEM_PROMPT,
-      model: saved.model || (provider === 'google' ? 'gemini-2.5-flash' : 'llama-3.3-70b-versatile'),
+      model: saved.model || (provider === 'google' ? 'gemini-2.5-flash' : (provider === 'groq' ? 'llama-3.3-70b-versatile' : saved.ollamaModel || 'qwen2.5-coder:14b')),
       
       // Initialize with Hardcoded Fallbacks
       availableModels: [...FALLBACK_GEMINI_MODELS],
@@ -113,6 +119,8 @@ export const useSettingsStore = defineStore('settings', {
       if (payload.provider !== undefined) this.provider = payload.provider
       if (payload.geminiApiKey !== undefined) this.geminiApiKey = payload.geminiApiKey
       if (payload.groqApiKey !== undefined) this.groqApiKey = payload.groqApiKey
+      if (payload.ollamaBaseUrl !== undefined) this.ollamaBaseUrl = payload.ollamaBaseUrl
+      if (payload.ollamaModel !== undefined) this.ollamaModel = payload.ollamaModel
       if (payload.systemPrompt !== undefined) this.systemPrompt = payload.systemPrompt
       if (payload.model !== undefined) this.model = payload.model
       saveToStorage(this.$state)
