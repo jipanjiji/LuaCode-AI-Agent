@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
-import { 
-  FALLBACK_GEMINI_MODELS, 
-  FALLBACK_GROQ_MODELS, 
-  getModelTier, 
+import {
+  FALLBACK_GEMINI_MODELS,
+  FALLBACK_GROQ_MODELS,
+  getModelTier,
   type ModelInfo
 } from '~/utils/model-list'
 
@@ -46,13 +46,13 @@ function loadFromStorage(): Partial<SettingsState> {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return {}
     const parsed = JSON.parse(raw)
-    
+
     // Migration: if old 'apiKey' exists, move it to 'geminiApiKey'
     if (parsed.apiKey && !parsed.geminiApiKey) {
       parsed.geminiApiKey = parsed.apiKey
       delete parsed.apiKey
     }
-    
+
     return parsed
   } catch {
     return {}
@@ -80,16 +80,16 @@ export const useSettingsStore = defineStore('settings', {
   state: (): SettingsState => {
     const saved = loadFromStorage()
     const provider = saved.provider || 'google'
-    
+
     return {
       provider: provider as 'google' | 'groq' | 'ollama',
       geminiApiKey: saved.geminiApiKey || '',
       groqApiKey: saved.groqApiKey || '',
-      ollamaBaseUrl: saved.ollamaBaseUrl || 'http://localhost:11434',
-      ollamaModel: saved.ollamaModel || 'qwen2.5-coder:14b',
+      ollamaBaseUrl: saved.ollamaBaseUrl || 'https://laptop-evaluation-gauge-magnificent.trycloudflare.com/',
+      ollamaModel: saved.ollamaModel || 'deepseek-r1:8b',
       systemPrompt: saved.systemPrompt || DEFAULT_SYSTEM_PROMPT,
-      model: saved.model || (provider === 'google' ? 'gemini-2.5-flash' : (provider === 'groq' ? 'llama-3.3-70b-versatile' : saved.ollamaModel || 'qwen2.5-coder:14b')),
-      
+      model: saved.model || (provider === 'google' ? 'gemini-2.5-flash' : (provider === 'groq' ? 'llama-3.3-70b-versatile' : saved.ollamaModel || 'deepseek-r1:8b')),
+
       // Initialize with Hardcoded Fallbacks
       availableModels: [...FALLBACK_GEMINI_MODELS],
       groqAvailableModels: [...FALLBACK_GROQ_MODELS],
@@ -139,9 +139,9 @@ export const useSettingsStore = defineStore('settings', {
       try {
         const endpoint = provider === 'google' ? '/api/models' : '/api/groq-models'
         const result = await $fetch(endpoint, { query: { key } }) as any
-        
+
         const isValid = !result.fallback && result.models?.length > 0
-        
+
         if (provider === 'google') {
           this.geminiKeyStatus = isValid ? 'valid' : 'invalid'
           if (isValid) {
@@ -170,13 +170,13 @@ export const useSettingsStore = defineStore('settings', {
     async discoverModels() {
       if (this.isFetchingModels) return
       this.isFetchingModels = true
-      
+
       try {
         // 1. Discover Google Models
-        const gResult = await $fetch('/api/models', { 
-          query: { key: this.geminiApiKey } 
+        const gResult = await $fetch('/api/models', {
+          query: { key: this.geminiApiKey }
         }) as any
-        
+
         if (!gResult.fallback && gResult.models?.length > 0) {
           this.availableModels = gResult.models.map((m: any) => ({
             ...m,
@@ -186,10 +186,10 @@ export const useSettingsStore = defineStore('settings', {
         }
 
         // 2. Discover Groq Models
-        const groqResult = await $fetch('/api/groq-models', { 
-          query: { key: this.groqApiKey } 
+        const groqResult = await $fetch('/api/groq-models', {
+          query: { key: this.groqApiKey }
         }) as any
-        
+
         if (!groqResult.fallback && groqResult.models?.length > 0) {
           this.groqAvailableModels = groqResult.models.map((m: any) => ({
             ...m,
@@ -197,7 +197,7 @@ export const useSettingsStore = defineStore('settings', {
             provider: 'groq'
           }))
         }
-        
+
         this.fullHealthScan()
       } catch (err) {
         console.error('Failed to discover models:', err)
@@ -208,7 +208,7 @@ export const useSettingsStore = defineStore('settings', {
 
     async checkHealth(modelId: string) {
       if (this.provider !== 'google') return
-      
+
       try {
         const data = await $fetch('/api/health', { query: { model: modelId } }) as any
         this.modelHealth[modelId] = {
