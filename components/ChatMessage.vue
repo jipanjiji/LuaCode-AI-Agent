@@ -23,6 +23,22 @@
       </div>
 
       <!-- Content -->
+      <div v-if="message.reasoning" class="reasoning-block">
+        <button class="reasoning-toggle" @click="showReasoning = !showReasoning">
+          <svg 
+            width="12" height="12" viewBox="0 0 24 24" fill="none" 
+            stroke="currentColor" stroke-width="2.5"
+            :style="{ transform: showReasoning ? 'rotate(90deg)' : 'rotate(0deg)' }"
+          >
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          {{ showReasoning ? 'Hide Thinking Process' : 'Show Thinking Process' }}
+        </button>
+        <div v-show="showReasoning" class="reasoning-content">
+          {{ message.reasoning }}
+        </div>
+      </div>
+
       <div
         class="message-content prose"
         v-html="renderedContent"
@@ -38,6 +54,14 @@ import type { Message } from '~/stores/chat'
 const props = defineProps<{ message: Message }>()
 
 const wrapperRef = ref<HTMLElement | null>(null)
+const showReasoning = ref(false)
+
+// Auto-expand reasoning if it starts populating
+watch(() => props.message.reasoning, (newVal) => {
+  if (newVal && newVal.length > 0 && newVal.length < 50) {
+    showReasoning.value = true
+  }
+})
 
 // ── Markdown rendering ──────────────────────────────────────────────────────
 const renderedContent = computed(() => {
@@ -214,4 +238,46 @@ function attachCopyButtons() {
 /* Prevent prose styles from being over-specific */
 .message-content :deep(p:first-child) { margin-top: 0; }
 .message-content :deep(p:last-child) { margin-bottom: 0; }
+/* Reasoning Block */
+.reasoning-block {
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.reasoning-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: #6b7fa3;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reasoning-toggle:hover {
+  background: rgba(255,255,255,0.03);
+  color: #94a3b8;
+}
+
+.reasoning-toggle svg {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reasoning-content {
+  padding: 0 14px 12px;
+  font-size: 0.8rem;
+  color: #6b7fa3;
+  font-style: italic;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
 </style>

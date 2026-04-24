@@ -8,14 +8,13 @@ interface ChatRequestBody {
   systemPrompt: string
   model?: string
   provider?: 'google' | 'groq' | 'ollama'
-  ollamaUrl?: string
 }
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<ChatRequestBody>(event)
 
   const config = useRuntimeConfig()
-  let { message, history = [], apiKey, systemPrompt, model, provider = 'google', ollamaUrl } = body
+  let { message, history = [], apiKey, systemPrompt, model, provider = 'google' } = body
 
   // --- Expert Knowledge Injection ---
   const expertHistory = [...AI_EXPERT_HISTORY]
@@ -28,8 +27,8 @@ export default defineEventHandler(async (event) => {
 
   // ── ROUTING: OLLAMA (LOCAL) ────────────────────────────────────────────────
   if (provider === 'ollama') {
-    const selectedModel = model || 'qwen2.5-coder:14b'
-    const baseUrl = (ollamaUrl || 'http://localhost:11434').replace(/\/$/, '')
+    const selectedModel = config.ollamaModel || 'deepseek-r1:8b'
+    const baseUrl = (config.ollamaServerUrl || 'http://localhost:11434').replace(/\/$/, '')
     const OLLAMA_URL = `${baseUrl}/api/chat`
 
     // Inject knowledge into system prompt
@@ -58,27 +57,32 @@ ${knowledgeBase}
     messages.push({ role: 'user', content: message })
 
     try {
-      const response = await $fetch<any>(OLLAMA_URL, {
+      const response = await fetch(OLLAMA_URL, {
         method: 'POST',
-        body: {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        body: JSON.stringify({
           model: selectedModel,
           messages,
-          stream: false,
+          stream: true,
           options: {
             temperature: 0.5,
             num_ctx: 8192
           }
-        }
+        })
       })
 
-      return {
-        text: response?.message?.content || 'No response from Ollama.',
-        usage: { total_tokens: response?.prompt_eval_count + response?.eval_count }
-      }
+      if (!response.ok) throw new Error(`Ollama error: ${response.statusText}`)
+
+      // Create a ReadableStream for Nitro to return
+      return sendStream(event, response.body!)
+
     } catch (err: any) {
       throw createError({ 
-        statusCode: err.status || 500, 
-        message: `Ollama Request Failed: ${err.message}. Make sure your local server is running and accessible.` 
+        statusCode: 500, 
+        message: `Ollama Request Failed: ${err.message}` 
       })
     }
   }

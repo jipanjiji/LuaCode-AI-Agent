@@ -5,6 +5,7 @@ export interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
+  reasoning?: string
   timestamp: number
   isError?: boolean
 }
@@ -72,7 +73,6 @@ export const useChatStore = defineStore('chat', {
       const settings = useSettingsStore()
       if (!userText.trim()) return
 
-      // Push user message
       const userMsg: Message = {
         id: generateId(),
         role: 'user',
@@ -81,42 +81,87 @@ export const useChatStore = defineStore('chat', {
       }
       this.messages.push(userMsg)
       this.isLoading = true
-      
-      // Update session title on first message
       this.updateCurrentSession()
 
+      // Create initial assistant message
+      const assistantMsg: Message = {
+        id: generateId(),
+        role: 'assistant',
+        content: '',
+        reasoning: '',
+        timestamp: Date.now(),
+      }
+      this.messages.push(assistantMsg)
+
       try {
-        const response = await $fetch('/api/chat', {
+        const response = await fetch('/api/chat', {
           method: 'POST',
-          body: {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             message: userMsg.content,
             history: this.geminiHistory.slice(0, -1),
             apiKey: settings.apiKey,
             systemPrompt: settings.systemPrompt,
             model: settings.model,
             provider: settings.provider,
-          },
+          }),
         })
 
-        const fullText = (response as any).text || 'No response received.'
-        
-        // Create an empty assistant message for streaming
-        const assistantMsg: Message = {
-          id: generateId(),
-          role: 'assistant',
-          content: '',
-          timestamp: Date.now(),
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}))
+          throw new Error(errData.message || 'Failed to connect to AI')
         }
-        this.messages.push(assistantMsg)
-        this.isLoading = false // Hide thinking indicator before streaming starts
 
-        // Typewriter effect logic
-        await this.streamText(assistantMsg.id, fullText)
+        const reader = response.body?.getReader()
+        if (!reader) throw new Error('No response body')
+
+        const decoder = new TextDecoder()
+        let isThinking = false
+        this.isLoading = false // Start showing tokens
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value, { stream: true })
+          const lines = chunk.split('\n').filter(l => l.trim())
+
+          for (const line of lines) {
+            try {
+              const parsed = JSON.parse(line)
+              const delta = parsed.message?.content || ''
+
+              if (delta.includes('<think>')) {
+                isThinking = true
+                const parts = delta.split('<think>')
+                assistantMsg.content += parts[0]
+                assistantMsg.reasoning += parts[1] || ''
+                continue
+              }
+              
+              if (delta.includes('</think>')) {
+                isThinking = false
+                const parts = delta.split('</think>')
+                assistantMsg.reasoning += parts[0]
+                assistantMsg.content += parts[1] || ''
+                continue
+              }
+
+              if (isThinking) {
+                assistantMsg.reasoning += delta
+              } else {
+                assistantMsg.content += delta
+              }
+            } catch (e) {
+              // Not JSON or partial chunk, ignore or handle
+            }
+          }
+        }
+
         this.updateCurrentSession()
-
       } catch (err: any) {
-        const errText = err?.data?.message || err?.message || 'An unknown error occurred.'
-        this.pushError(`❌ API Error: ${errText}`)
+        this.messages.pop() // Remove empty assistant message
+        this.pushError(`❌ API Error: ${err.message}`)
       } finally {
         this.isLoading = false
       }

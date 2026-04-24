@@ -14,6 +14,8 @@ export default defineNuxtConfig({
     // Private keys — server only
     geminiApiKey: process.env.GEMINI_API_KEY || '',
     groqApiKey: process.env.GROQ_API_KEY || '',
+    ollamaServerUrl: process.env.OLLAMA_SERVER_URL || '',
+    ollamaModel: process.env.OLLAMA_MODEL || '',
     // Public keys exposed to client
     public: {}
   },

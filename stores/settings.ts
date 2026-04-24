@@ -28,8 +28,6 @@ export interface SettingsState {
   provider: 'google' | 'groq' | 'ollama'
   geminiApiKey: string
   groqApiKey: string
-  ollamaBaseUrl: string
-  ollamaModel: string
   systemPrompt: string
   model: string
   availableModels: ModelInfo[]
@@ -66,8 +64,6 @@ function saveToStorage(state: SettingsState) {
       provider: state.provider,
       geminiApiKey: state.geminiApiKey,
       groqApiKey: state.groqApiKey,
-      ollamaBaseUrl: state.ollamaBaseUrl,
-      ollamaModel: state.ollamaModel,
       systemPrompt: state.systemPrompt,
       model: state.model
     }))
@@ -85,10 +81,8 @@ export const useSettingsStore = defineStore('settings', {
       provider: provider as 'google' | 'groq' | 'ollama',
       geminiApiKey: saved.geminiApiKey || '',
       groqApiKey: saved.groqApiKey || '',
-      ollamaBaseUrl: saved.ollamaBaseUrl || 'https://laptop-evaluation-gauge-magnificent.trycloudflare.com/',
-      ollamaModel: saved.ollamaModel || 'deepseek-r1:8b',
       systemPrompt: saved.systemPrompt || DEFAULT_SYSTEM_PROMPT,
-      model: saved.model || (provider === 'google' ? 'gemini-2.5-flash' : (provider === 'groq' ? 'llama-3.3-70b-versatile' : saved.ollamaModel || 'deepseek-r1:8b')),
+      model: saved.model || (provider === 'google' ? 'gemini-2.5-flash' : (provider === 'groq' ? 'llama-3.3-70b-versatile' : 'ollama')),
 
       // Initialize with Hardcoded Fallbacks
       availableModels: [...FALLBACK_GEMINI_MODELS],
@@ -103,6 +97,7 @@ export const useSettingsStore = defineStore('settings', {
   getters: {
     apiKey: (state) => state.provider === 'google' ? state.geminiApiKey : state.groqApiKey,
     hasApiKey: (state) => {
+      if (state.provider === 'ollama') return true
       const key = state.provider === 'google' ? state.geminiApiKey : state.groqApiKey
       return key.trim().length > 0
     },
@@ -119,8 +114,6 @@ export const useSettingsStore = defineStore('settings', {
       if (payload.provider !== undefined) this.provider = payload.provider
       if (payload.geminiApiKey !== undefined) this.geminiApiKey = payload.geminiApiKey
       if (payload.groqApiKey !== undefined) this.groqApiKey = payload.groqApiKey
-      if (payload.ollamaBaseUrl !== undefined) this.ollamaBaseUrl = payload.ollamaBaseUrl
-      if (payload.ollamaModel !== undefined) this.ollamaModel = payload.ollamaModel
       if (payload.systemPrompt !== undefined) this.systemPrompt = payload.systemPrompt
       if (payload.model !== undefined) this.model = payload.model
       saveToStorage(this.$state)

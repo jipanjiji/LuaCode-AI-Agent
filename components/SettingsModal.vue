@@ -36,27 +36,23 @@
                 </svg>
                 Service Provider
               </div>
-              <div class="provider-toggle">
+              <div class="provider-selector">
                 <button
-                  class="provider-btn"
-                  :class="{ active: localProvider === 'google' }"
-                  @click="localProvider = 'google'"
+                  v-for="p in ['google', 'groq', 'ollama']"
+                  :key="p"
+                  class="provider-card"
+                  :class="{ active: localProvider === p }"
+                  @click="localProvider = p"
                 >
-                  Google Gemini
-                </button>
-                <button
-                  class="provider-btn"
-                  :class="{ active: localProvider === 'groq' }"
-                  @click="localProvider = 'groq'"
-                >
-                  Groq
-                </button>
-                <button
-                  class="provider-btn"
-                  :class="{ active: localProvider === 'ollama' }"
-                  @click="localProvider = 'ollama'"
-                >
-                  Ollama (Host)
+                  <div class="provider-card-icon">
+                    <svg v-if="p === 'google'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <svg v-else-if="p === 'groq'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>
+                    <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                  </div>
+                  <div class="provider-card-info">
+                    <span class="provider-name">{{ p === 'google' ? 'Gemini' : (p === 'groq' ? 'Groq' : 'Ollama') }}</span>
+                    <span class="provider-type">{{ p === 'ollama' ? 'Local Host' : 'Cloud API' }}</span>
+                  </div>
                 </button>
               </div>
             </div>
@@ -143,24 +139,10 @@
                 </div>
               </div>
 
-              <div v-else class="ollama-config">
-                <div class="ollama-field">
-                  <label class="ollama-label">Server URL (Cloudflare/Ngrok)</label>
-                  <input
-                    v-model="localOllamaBaseUrl"
-                    type="text"
-                    class="form-input input-glow"
-                    placeholder="https://your-tunnel.trycloudflare.com"
-                  />
-                </div>
-                <div class="ollama-field">
-                  <label class="ollama-label">Model Name</label>
-                  <input
-                    v-model="localOllamaModel"
-                    type="text"
-                    class="form-input input-glow"
-                    placeholder="qwen2.5-coder:14b"
-                  />
+              <div v-else class="ollama-info-box">
+                <div class="ollama-status">
+                  <div class="status-badge">Local Server Active</div>
+                  <p class="status-desc">Using your laptop as an AI host via Cloudflare Tunnel. All requests are processed locally on your machine.</p>
                 </div>
               </div>
 
@@ -353,8 +335,6 @@ const settings = useSettingsStore()
 const localProvider = ref<'google' | 'groq' | 'ollama'>('google')
 const localGeminiKey = ref('')
 const localGroqKey = ref('')
-const localOllamaBaseUrl = ref('')
-const localOllamaModel = ref('')
 const localSystemPrompt = ref('')
 const localModel = ref('')
 const showApiKey = ref(false)
@@ -366,7 +346,7 @@ let validationTimeout: any = null
 const showModelDropdown = ref(false)
 
 const selectedModelLabel = computed(() => {
-  if (localProvider.value === 'ollama') return localOllamaModel.value || 'Not set'
+  if (localProvider.value === 'ollama') return 'Local Model (Environment)'
   const models = localProvider.value === 'google' 
     ? settings.availableModels 
     : settings.groqAvailableModels
@@ -456,8 +436,6 @@ watch(
       localProvider.value = settings.provider
       localGeminiKey.value = settings.geminiApiKey
       localGroqKey.value = settings.groqApiKey
-      localOllamaBaseUrl.value = settings.ollamaBaseUrl
-      localOllamaModel.value = settings.ollamaModel
       localSystemPrompt.value = settings.systemPrompt
       localModel.value = settings.model
       saveStatus.value = 'idle'
@@ -505,7 +483,7 @@ watch(localProvider, (newProvider, oldProvider) => {
   } else if (newProvider === 'groq') {
     localModel.value = 'llama-3.3-70b-versatile'
   } else {
-    localModel.value = localOllamaModel.value || 'qwen2.5-coder:14b'
+    localModel.value = 'ollama'
   }
 })
 
@@ -516,10 +494,8 @@ function handleSave() {
     provider: localProvider.value,
     geminiApiKey: localGeminiKey.value,
     groqApiKey: localGroqKey.value,
-    ollamaBaseUrl: localOllamaBaseUrl.value,
-    ollamaModel: localOllamaModel.value,
     systemPrompt: localSystemPrompt.value,
-    model: localProvider.value === 'ollama' ? localOllamaModel.value : localModel.value,
+    model: localModel.value,
   })
   saveStatus.value = 'saved'
   setTimeout(() => {
@@ -629,6 +605,79 @@ function resetSystemPrompt() {
 }
 
 .form-section { display: flex; flex-direction: column; gap: 8px; }
+
+/* Provider Selector Redesign */
+.provider-selector {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.provider-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 12px;
+  background: #141922;
+  border: 1px solid #252f45;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #6b7fa3;
+}
+
+.provider-card:hover {
+  border-color: #3b4c73;
+  background: #1a212e;
+  transform: translateY(-2px);
+}
+
+.provider-card.active {
+  background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.03));
+  border-color: #3b82f6;
+  color: #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 0 12px rgba(59,130,246,0.05);
+}
+
+.provider-card-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.active .provider-card-icon {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 0 12px rgba(59,130,246,0.4);
+}
+
+.provider-card-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.provider-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.provider-type {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
 .provider-toggle {
   display: grid;
@@ -1096,28 +1145,35 @@ function resetSystemPrompt() {
 .modal-leave-active { transition: all 0.2s ease; }
 .modal-enter-from { opacity: 0; transform: scale(0.94) translateY(16px); }
 .modal-leave-to { opacity: 0; transform: scale(0.97) translateY(8px); }
-.ollama-config {
+.ollama-info-box {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid #252f45;
-  border-radius: 10px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(251,191,36,0.02));
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 12px;
 }
 
-.ollama-field {
+.ollama-status {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.ollama-label {
+.status-badge {
   font-size: 0.7rem;
-  font-weight: 700;
-  color: #6b7fa3;
+  font-weight: 800;
+  color: #fbbf24;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.status-desc {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
 }
 
 </style>
