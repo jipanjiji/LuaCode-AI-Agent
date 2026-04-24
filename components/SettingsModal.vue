@@ -139,10 +139,15 @@
                 </div>
               </div>
 
-              <div v-else class="ollama-info-box">
-                <div class="ollama-status">
-                  <div class="status-badge">Local Server Active</div>
-                  <p class="status-desc">Using your laptop as an AI host via Cloudflare Tunnel. All requests are processed locally on your machine.</p>
+              <div v-else class="local-info-box">
+                <div class="info-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <div class="info-text">
+                  <strong>Local Server Active</strong>
+                  <span>Using configuration from server .env file. No client-side key required.</span>
                 </div>
               </div>
 
@@ -150,11 +155,8 @@
                 <template v-if="localProvider === 'google'">
                   Get key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link">Google Studio ↗</a>
                 </template>
-                <template v-else-if="localProvider === 'groq'">
-                  Get key from <a href="https://console.groq.com/keys" target="_blank" class="link">Groq Console ↗</a>
-                </template>
                 <template v-else>
-                  Use your laptop as server via <a href="https://ollama.com" target="_blank" class="link">Ollama ↗</a>
+                  Get key from <a href="https://console.groq.com/keys" target="_blank" class="link">Groq Console ↗</a>
                 </template>
               </p>
 
@@ -332,7 +334,7 @@ const emit = defineEmits<{ close: [] }>()
 
 const settings = useSettingsStore()
 
-const localProvider = ref<'google' | 'groq' | 'ollama'>('google')
+const localProvider = ref<'google' | 'groq'>('google')
 const localGeminiKey = ref('')
 const localGroqKey = ref('')
 const localSystemPrompt = ref('')
@@ -346,7 +348,6 @@ let validationTimeout: any = null
 const showModelDropdown = ref(false)
 
 const selectedModelLabel = computed(() => {
-  if (localProvider.value === 'ollama') return 'Local Model (Environment)'
   const models = localProvider.value === 'google' 
     ? settings.availableModels 
     : settings.groqAvailableModels
@@ -442,9 +443,7 @@ watch(
       showApiKey.value = false
       
       // Discovery & Polling
-      if (localProvider.value !== 'ollama') {
-        settings.discoverModels()
-      }
+      settings.discoverModels()
       startHealthPolling()
 
       // Initial validation if keys exist
@@ -480,10 +479,8 @@ watch(localProvider, (newProvider, oldProvider) => {
   
   if (newProvider === 'google') {
     localModel.value = 'gemini-2.5-flash'
-  } else if (newProvider === 'groq') {
-    localModel.value = 'llama-3.3-70b-versatile'
   } else {
-    localModel.value = 'ollama'
+    localModel.value = 'llama-3.3-70b-versatile'
   }
 })
 
@@ -1140,40 +1137,48 @@ function resetSystemPrompt() {
   border: 1px solid #344060;
 }
 
+.local-info-box {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+.info-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-text strong {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.info-text span {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
 /* Modal transition */
 .modal-enter-active { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 .modal-leave-active { transition: all 0.2s ease; }
 .modal-enter-from { opacity: 0; transform: scale(0.94) translateY(16px); }
 .modal-leave-to { opacity: 0; transform: scale(0.97) translateY(8px); }
-.ollama-info-box {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(251,191,36,0.02));
-  border: 1px solid rgba(251,191,36,0.2);
-  border-radius: 12px;
-}
-
-.ollama-status {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.status-badge {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: #fbbf24;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.status-desc {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  line-height: 1.5;
-  margin: 0;
-}
-
 </style>

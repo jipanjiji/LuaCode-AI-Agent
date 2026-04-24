@@ -1,4 +1,5 @@
 import { defineEventHandler, readBody, createError } from 'h3'
+import { AI_CORE_IDENTITY } from '../utils/ai-identity'
 import { AI_EXPERT_HISTORY } from '../utils/ai-knowledge'
 
 interface ChatRequestBody {
@@ -14,77 +15,18 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<ChatRequestBody>(event)
 
   const config = useRuntimeConfig()
-  let { message, history = [], apiKey, systemPrompt, model, provider = 'google' } = body
+  let { message, history = [], apiKey, systemPrompt: userPrompt, model, provider = 'google' } = body
+
+  // Combine Core Identity with User-defined skills prompt
+  const systemPrompt = `${AI_CORE_IDENTITY}\n\n${userPrompt || ''}`
 
   // --- Expert Knowledge Injection ---
   const expertHistory = [...AI_EXPERT_HISTORY]
+  const fullHistory = [...expertHistory, ...history]
 
   // Fallback to environment key if not provided by client
   if (!apiKey || apiKey.trim().length === 0) {
-    if (provider === 'google') apiKey = config.geminiApiKey
-    if (provider === 'groq') apiKey = config.groqApiKey
-  }
-
-  // ── ROUTING: OLLAMA (LOCAL) ────────────────────────────────────────────────
-  if (provider === 'ollama') {
-    const selectedModel = config.ollamaModel || 'deepseek-r1:8b'
-    const baseUrl = (config.ollamaServerUrl || 'http://localhost:11434').replace(/\/$/, '')
-    const OLLAMA_URL = `${baseUrl}/api/chat`
-
-    // Inject knowledge into system prompt
-    const knowledgeBase = expertHistory
-      .map(turn => `[${turn.role.toUpperCase()}]: ${turn.parts.map(p => p.text).join('\n')}`)
-      .join('\n\n')
-
-    const combinedSystemPrompt = `
-${systemPrompt}
-
-# REFERENCE LIBRARY & TECHNICAL SPECIFICATIONS:
-${knowledgeBase}
-    `.trim()
-
-    const messages = [
-      { role: 'system', content: combinedSystemPrompt }
-    ]
-
-    for (const turn of history) {
-      messages.push({
-        role: turn.role === 'user' ? 'user' : 'assistant',
-        content: turn.parts.map(p => p.text).join('\n')
-      })
-    }
-
-    messages.push({ role: 'user', content: message })
-
-    try {
-      const response = await fetch(OLLAMA_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        },
-        body: JSON.stringify({
-          model: selectedModel,
-          messages,
-          stream: true,
-          options: {
-            temperature: 0.5,
-            num_ctx: 8192
-          }
-        })
-      })
-
-      if (!response.ok) throw new Error(`Ollama error: ${response.statusText}`)
-
-      // Create a ReadableStream for Nitro to return
-      return sendStream(event, response.body!)
-
-    } catch (err: any) {
-      throw createError({ 
-        statusCode: 500, 
-        message: `Ollama Request Failed: ${err.message}` 
-      })
-    }
+    apiKey = provider === 'google' ? config.geminiApiKey : config.groqApiKey
   }
 
   apiKey = apiKey?.trim()
@@ -105,13 +47,13 @@ ${knowledgeBase}
     // Filter knowledge for smaller models to prevent TS hallucinations
     const supportsSystemInstruction = !selectedModel.includes('gemma') && !selectedModel.includes('nano')
     let expertHistorySub = [...expertHistory]
-    
+
     if (!supportsSystemInstruction) {
       expertHistorySub = expertHistorySub.filter(turn => {
         const text = turn.parts.map(p => p.text).join('')
-        return !text.includes('export interface') && 
-               !text.includes('export type') && 
-               !text.includes('LUAU CORE RUNTIME')
+        return !text.includes('export interface') &&
+          !text.includes('export type') &&
+          !text.includes('LUAU CORE RUNTIME')
       })
     }
 
@@ -132,7 +74,7 @@ ${knowledgeBase}
     `.trim()
 
     const requestBody: any = {
-      contents: history.length > 0 
+      contents: history.length > 0
         ? [...history, { role: 'user', parts: [{ text: message }] }]
         : [{ role: 'user', parts: [{ text: message }] }],
       generationConfig: { temperature: 0.5, maxOutputTokens: 8192 },
@@ -160,6 +102,48 @@ ${knowledgeBase}
       return { text }
     } catch (err: any) {
       throw createError({ statusCode: err.status || 500, message: err?.data?.error?.message || 'Gemini Error' })
+    }
+  }
+
+  // ── ROUTING: OLLAMA (LOCAL) ────────────────────────────────────────────────
+  if (provider === 'ollama') {
+    const selectedModel = config.ollamaModel || 'deepseek-r1:8b'
+    const baseUrl = (config.ollamaServerUrl || 'http://localhost:11434').replace(/\/$/, '')
+    const OLLAMA_URL = `${baseUrl}/api/chat`
+
+    const messages = [
+      { role: 'system', content: systemPrompt }
+    ]
+    for (const turn of history) {
+      messages.push({
+        role: turn.role === 'user' ? 'user' : 'assistant',
+        content: turn.parts.map(p => p.text).join('\n')
+      })
+    }
+    messages.push({ role: 'user', content: message })
+
+    try {
+      const response = await $fetch<any>(OLLAMA_URL, {
+        method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        body: {
+          model: selectedModel,
+          messages,
+          stream: false,
+          options: { temperature: 0.5, num_ctx: 8192 }
+        }
+      })
+
+      return {
+        text: response?.message?.content || 'No response from Ollama.',
+      }
+    } catch (err: any) {
+      throw createError({ 
+        statusCode: 500, 
+        message: `Ollama Request Failed: ${err.message}. Pastikan server lokal kamu menyala.` 
+      })
     }
   }
 
@@ -217,9 +201,9 @@ ${knowledgeBase}
         usage: response?.usage
       }
     } catch (err: any) {
-      throw createError({ 
-        statusCode: err.status || 500, 
-        message: err?.data?.error?.message || 'Groq API Request Failed.' 
+      throw createError({
+        statusCode: err.status || 500,
+        message: err?.data?.error?.message || 'Groq API Request Failed.'
       })
     }
   }

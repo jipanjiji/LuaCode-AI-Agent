@@ -56,13 +56,6 @@ const props = defineProps<{ message: Message }>()
 const wrapperRef = ref<HTMLElement | null>(null)
 const showReasoning = ref(false)
 
-// Auto-expand reasoning if it starts populating
-watch(() => props.message.reasoning, (newVal) => {
-  if (newVal && newVal.length > 0 && newVal.length < 50) {
-    showReasoning.value = true
-  }
-})
-
 // ── Markdown rendering ──────────────────────────────────────────────────────
 const renderedContent = computed(() => {
   if (import.meta.server) return escapeHtml(props.message.content)

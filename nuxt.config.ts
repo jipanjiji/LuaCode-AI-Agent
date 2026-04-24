@@ -14,8 +14,8 @@ export default defineNuxtConfig({
     // Private keys — server only
     geminiApiKey: process.env.GEMINI_API_KEY || '',
     groqApiKey: process.env.GROQ_API_KEY || '',
-    ollamaServerUrl: process.env.OLLAMA_SERVER_URL || '',
-    ollamaModel: process.env.OLLAMA_MODEL || '',
+    ollamaServerUrl: process.env.OLLAMA_SERVER_URL || 'http://localhost:11434',
+    ollamaModel: process.env.OLLAMA_MODEL || 'deepseek-r1:8b',
     // Public keys exposed to client
     public: {}
   },

@@ -46,24 +46,24 @@ export const useChatStore = defineStore('chat', {
     // Ensures roles alternate correctly (user, model, user, model...)
     geminiHistory(state): { role: string; parts: { text: string }[] }[] {
       const history: { role: string; parts: { text: string }[] }[] = []
-      
+
       const validMessages = state.messages.filter((m) => !m.isError)
-      
+
       for (const msg of validMessages) {
         const role = msg.role === 'user' ? 'user' : 'model'
-        
+
         // Gemini requires alternating roles. If the last role is the same, 
         // we skip this message to maintain valid history sequence.
         if (history.length > 0 && history[history.length - 1].role === role) {
           continue
         }
-        
+
         history.push({
           role,
           parts: [{ text: msg.content }],
         })
       }
-      
+
       return history
     },
   },
@@ -73,6 +73,7 @@ export const useChatStore = defineStore('chat', {
       const settings = useSettingsStore()
       if (!userText.trim()) return
 
+      // Push user message
       const userMsg: Message = {
         id: generateId(),
         role: 'user',
@@ -81,87 +82,51 @@ export const useChatStore = defineStore('chat', {
       }
       this.messages.push(userMsg)
       this.isLoading = true
+
+      // Update session title on first message
       this.updateCurrentSession()
 
-      // Create initial assistant message
-      const assistantMsg: Message = {
-        id: generateId(),
-        role: 'assistant',
-        content: '',
-        reasoning: '',
-        timestamp: Date.now(),
-      }
-      this.messages.push(assistantMsg)
-
       try {
-        const response = await fetch('/api/chat', {
+        const response = await $fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          body: {
             message: userMsg.content,
             history: this.geminiHistory.slice(0, -1),
             apiKey: settings.apiKey,
             systemPrompt: settings.systemPrompt,
             model: settings.model,
             provider: settings.provider,
-          }),
+          },
         })
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}))
-          throw new Error(errData.message || 'Failed to connect to AI')
+        let fullText = (response as any).text || 'No response received.'
+        let reasoning = ''
+
+        // Extract reasoning (DeepSeek <think> tags)
+        const thinkMatch = fullText.match(/<think>([\s\S]*?)<\/think>/i)
+        if (thinkMatch) {
+          reasoning = thinkMatch[1].trim()
+          fullText = fullText.replace(/<think>[\s\S]*?<\/think>/i, '').trim()
         }
 
-        const reader = response.body?.getReader()
-        if (!reader) throw new Error('No response body')
-
-        const decoder = new TextDecoder()
-        let isThinking = false
-        this.isLoading = false // Start showing tokens
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n').filter(l => l.trim())
-
-          for (const line of lines) {
-            try {
-              const parsed = JSON.parse(line)
-              const delta = parsed.message?.content || ''
-
-              if (delta.includes('<think>')) {
-                isThinking = true
-                const parts = delta.split('<think>')
-                assistantMsg.content += parts[0]
-                assistantMsg.reasoning += parts[1] || ''
-                continue
-              }
-              
-              if (delta.includes('</think>')) {
-                isThinking = false
-                const parts = delta.split('</think>')
-                assistantMsg.reasoning += parts[0]
-                assistantMsg.content += parts[1] || ''
-                continue
-              }
-
-              if (isThinking) {
-                assistantMsg.reasoning += delta
-              } else {
-                assistantMsg.content += delta
-              }
-            } catch (e) {
-              // Not JSON or partial chunk, ignore or handle
-            }
-          }
+        // Create an empty assistant message
+        const assistantMsg: Message = {
+          id: generateId(),
+          role: 'assistant',
+          content: '',
+          reasoning: reasoning,
+          timestamp: Date.now(),
         }
+        this.messages.push(assistantMsg)
+        this.isLoading = false 
 
+        // Typewriter effect logic
+        await this.streamText(assistantMsg.id, fullText)
         this.updateCurrentSession()
+
       } catch (err: any) {
-        this.messages.pop() // Remove empty assistant message
-        this.pushError(`❌ API Error: ${err.message}`)
+        const errText = err?.data?.message || err?.message || 'An unknown error occurred.'
+        this.pushError(`❌ API Error: ${errText}`)
       } finally {
         this.isLoading = false
       }
@@ -172,9 +137,9 @@ export const useChatStore = defineStore('chat', {
       if (!msg) return
 
       // Adjust speed for a very deliberate and premium typewriter feel
-      const delay = fullText.length > 500 ? 25 : 50 
+      const delay = fullText.length > 500 ? 25 : 50
       const chunks = fullText.split(' ')
-      
+
       for (let i = 0; i < chunks.length; i++) {
         msg.content += (i === 0 ? '' : ' ') + chunks[i]
         // Small delay between words/chunks for smooth visual flow
@@ -203,7 +168,7 @@ export const useChatStore = defineStore('chat', {
       if (this.messages.length === 0) return
 
       const firstUserMsg = this.messages.find(m => m.role === 'user')
-      const title = firstUserMsg 
+      const title = firstUserMsg
         ? firstUserMsg.content.substring(0, 40) + (firstUserMsg.content.length > 40 ? '…' : '')
         : 'New Chat'
 
