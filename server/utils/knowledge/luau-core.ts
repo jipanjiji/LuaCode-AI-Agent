@@ -450,9 +450,9 @@ export interface RobloxInstance extends LuaUserdata<"Instance"> {
    */
   [key: LuaString]: LuaValue;
 }
-import type { GeminiMessage } from '../ai-knowledge';
+import type { KnowledgeMessage } from '../ai-knowledge';
 
-export const LUAU_CORE_KNOWLEDGE: GeminiMessage = {
+export const LUAU_CORE_KNOWLEDGE: KnowledgeMessage = {
   role: 'user',
   parts: [{ text: `REFERENSI TEKNIS: LUAU CORE RUNTIME
 Ikuti spesifikasi internal ini untuk setiap pengerjaan script:

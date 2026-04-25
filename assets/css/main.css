@@ -138,7 +138,7 @@ body { height: 100%; margin: 0; overflow: hidden; }
 
 /* ─── Copy button ───────────────────────────────────────────────────────────── */
 .copy-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   border-radius: 5px;
@@ -149,11 +149,18 @@ body { height: 100%; margin: 0; overflow: hidden; }
   font-family: 'Inter', sans-serif;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 88px;
+  min-width: 78px;
   height: 28px;
   flex-shrink: 0;
   justify-content: center;
-  padding: 0; /* Clear padding for absolute centering */
+  padding: 0 10px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.copy-btn svg {
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .copy-btn:hover {

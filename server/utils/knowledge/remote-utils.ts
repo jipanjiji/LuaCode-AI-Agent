@@ -611,9 +611,9 @@ export function exportLog(entries: RemoteLogEntry[]): LuaString {
   return entries.map(formatLogEntry).join("\n") as LuaString;
 }
 
-import type { GeminiMessage } from '../ai-knowledge';
+import type { KnowledgeMessage } from '../ai-knowledge';
 
-export const REMOTE_UTILS_KNOWLEDGE: GeminiMessage = {
+export const REMOTE_UTILS_KNOWLEDGE: KnowledgeMessage = {
   role: 'user',
   parts: [{ text: `REFERENSI TEKNIS: REMOTE INTERCEPT & UTILS
 Gunakan pola ini untuk mengelola komunikasi network:

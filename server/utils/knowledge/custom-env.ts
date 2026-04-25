@@ -432,9 +432,9 @@ export declare function execScript(
   options?: ScriptLoaderOptions
 ): void;
 
-import type { GeminiMessage } from '../ai-knowledge';
+import type { KnowledgeMessage } from '../ai-knowledge';
 
-export const CUSTOM_ENV_KNOWLEDGE: GeminiMessage = {
+export const CUSTOM_ENV_KNOWLEDGE: KnowledgeMessage = {
   role: 'user',
   parts: [{ text: `REFERENSI TEKNIS: EXECUTOR CUSTOM ENVIRONMENT (GLOBALS)
 Daftar API eksklusif yang tersedia di lingkungan eksekusi kamu:

@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import { AI_CORE_IDENTITY } from '../utils/ai-identity'
-import { AI_EXPERT_HISTORY } from '../utils/ai-knowledge'
+import { routeKnowledge, getMatchedModuleNames } from '../utils/knowledge-router'
 
 interface ChatRequestBody {
   message: string
@@ -20,9 +20,34 @@ export default defineEventHandler(async (event) => {
   // Combine Core Identity with User-defined skills prompt
   const systemPrompt = `${AI_CORE_IDENTITY}\n\n${userPrompt || ''}`
 
-  // --- Expert Knowledge Injection ---
-  const expertHistory = [...AI_EXPERT_HISTORY]
-  const fullHistory = [...expertHistory, ...history]
+  // --- Smart Knowledge Routing ---
+  // Only load knowledge modules relevant to the user's message
+  // Ollama (local, limited context) gets fewer modules than cloud APIs
+  const maxModules = provider === 'ollama' ? 3 : 5
+  const relevantKnowledge = routeKnowledge(message, maxModules)
+
+  // Debug: log which modules were selected (development only)
+  if (process.dev) {
+    const matched = getMatchedModuleNames(message, maxModules)
+    console.log(`[Knowledge Router] Provider: ${provider}, Modules: [${matched.join(', ')}]`)
+  }
+
+  // Build knowledge text from routed modules
+  const knowledgeBase = relevantKnowledge
+    .map(turn => `[${turn.role === 'user' ? 'USER' : 'EXPERT'}]: ${turn.parts.map(p => p.text).join('\n')}`)
+    .join('\n\n')
+
+  const fullSystemPrompt = `
+${systemPrompt}
+
+# PRIMARY DIRECTIVE:
+You are a ROBLOX LUA (LUAU) EXPERT. 
+STRICTLY GENERATE LUAU CODE FOR ROBLOX. 
+DO NOT GENERATE TYPESCRIPT, INTERFACES, OR BACKEND DEFINITIONS.
+
+# REFERENCE LIBRARY:
+${knowledgeBase}
+  `.trim()
 
   // Fallback to environment key if not provided by client
   if (!apiKey || apiKey.trim().length === 0) {
@@ -44,34 +69,7 @@ export default defineEventHandler(async (event) => {
     const API_VERSION = 'v1beta'
     const GEMINI_URL = `https://generativelanguage.googleapis.com/${API_VERSION}/models/${selectedModel}:generateContent?key=${apiKey}`
 
-    // Filter knowledge for smaller models to prevent TS hallucinations
     const supportsSystemInstruction = !selectedModel.includes('gemma') && !selectedModel.includes('nano')
-    let expertHistorySub = [...expertHistory]
-
-    if (!supportsSystemInstruction) {
-      expertHistorySub = expertHistorySub.filter(turn => {
-        const text = turn.parts.map(p => p.text).join('')
-        return !text.includes('export interface') &&
-          !text.includes('export type') &&
-          !text.includes('LUAU CORE RUNTIME')
-      })
-    }
-
-    const knowledgeBase = expertHistorySub
-      .map(turn => `[${turn.role === 'user' ? 'USER' : 'EXPERT'}]: ${turn.parts.map(p => p.text).join('\n')}`)
-      .join('\n\n')
-
-    const combinedSystemPrompt = `
-${systemPrompt}
-
-# PRIMARY DIRECTIVE:
-You are a ROBLOX LUA (LUAU) EXPERT. 
-STRICTLY GENERATE LUAU CODE FOR ROBLOX. 
-DO NOT GENERATE TYPESCRIPT, INTERFACES, OR BACKEND DEFINITIONS.
-
-# REFERENCE LIBRARY:
-${knowledgeBase}
-    `.trim()
 
     const requestBody: any = {
       contents: history.length > 0
@@ -87,12 +85,12 @@ ${knowledgeBase}
     }
 
     if (supportsSystemInstruction) {
-      requestBody.systemInstruction = { parts: [{ text: combinedSystemPrompt }] }
+      requestBody.systemInstruction = { parts: [{ text: fullSystemPrompt }] }
     } else {
       // For models like Gemma, prepend system prompt to the FIRST message
       if (requestBody.contents[0].role === 'user') {
         const firstText = requestBody.contents[0].parts[0].text
-        requestBody.contents[0].parts[0].text = `[SYSTEM INSTRUCTION]\n${combinedSystemPrompt}\n\n[USER MESSAGE]\n${firstText}`
+        requestBody.contents[0].parts[0].text = `[SYSTEM INSTRUCTION]\n${fullSystemPrompt}\n\n[USER MESSAGE]\n${firstText}`
       }
     }
 
@@ -112,7 +110,7 @@ ${knowledgeBase}
     const OLLAMA_URL = `${baseUrl}/api/chat`
 
     const messages = [
-      { role: 'system', content: systemPrompt }
+      { role: 'system', content: fullSystemPrompt }
     ]
     for (const turn of history) {
       messages.push({
@@ -152,23 +150,8 @@ ${knowledgeBase}
     const selectedModel = model || 'llama-3.3-70b-versatile'
     const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
-    // FOR GROQ: We put knowledge in the SYSTEM prompt to prevent history confusion
-    const knowledgeBase = expertHistory
-      .map(turn => `[${turn.role.toUpperCase()}]: ${turn.parts.map(p => p.text).join('\n')}`)
-      .join('\n\n')
-
-    const combinedSystemPrompt = `
-${systemPrompt}
-
-# REFERENCE LIBRARY & TECHNICAL SPECIFICATIONS:
-You must strictly adhere to the professional patterns and internal Luau optimizations defined in the knowledge base below.
-Failure to follow these patterns (e.g. using 'while wait()') is a failure of your mission.
-
-${knowledgeBase}
-    `.trim()
-
     const messages = [
-      { role: 'system', content: combinedSystemPrompt }
+      { role: 'system', content: fullSystemPrompt }
     ]
 
     // Only inject ACTUAL user history, not expert history

@@ -579,9 +579,9 @@ export function section(props: Omit<SectionProps, "componentType">): ComponentNo
   return { props: { componentType: "Section", ...props } };
 }
 
-import type { GeminiMessage } from '../ai-knowledge';
+import type { KnowledgeMessage } from '../ai-knowledge';
 
-export const UI_RENDERER_KNOWLEDGE: GeminiMessage = {
+export const UI_RENDERER_KNOWLEDGE: KnowledgeMessage = {
   role: 'user',
   parts: [{ text: `REFERENSI TEKNIS: UI RENDERER (CORE GUI)
 Gunakan spesifikasi ini untuk membangun interface tingkat tinggi:
